@@ -7,7 +7,13 @@ import '../models/medical_record.dart';
 import '../models/prescription.dart';
 import '../models/clinical_note.dart';
 
-final firestoreServiceProvider = Provider<FirestoreService>((ref) => FirestoreService());
+// Export auth providers
+export '../services/auth_service.dart'
+    show authServiceProvider, authStateProvider, currentUserProvider;
+
+final firestoreServiceProvider = Provider<FirestoreService>(
+  (ref) => FirestoreService(),
+);
 
 // Patient Providers
 final patientAppointmentsProvider = StreamProvider<List<Appointment>>((ref) {
@@ -26,9 +32,10 @@ final availableDoctorsProvider = StreamProvider<List<AppUser>>((ref) {
   return ref.read(firestoreServiceProvider).getAvailableDoctors();
 });
 
-final patientRecordsProvider = StreamProvider.family<List<MedicalRecord>, String>((ref, patientId) {
-  return ref.read(firestoreServiceProvider).getPatientRecords(patientId);
-});
+final patientRecordsProvider =
+    StreamProvider.family<List<MedicalRecord>, String>((ref, patientId) {
+      return ref.read(firestoreServiceProvider).getPatientRecords(patientId);
+    });
 
 // Doctor Providers
 final doctorAppointmentsProvider = StreamProvider<List<Appointment>>((ref) {
@@ -37,29 +44,34 @@ final doctorAppointmentsProvider = StreamProvider<List<Appointment>>((ref) {
   return ref.read(firestoreServiceProvider).getDoctorAppointments(user.id);
 });
 
-final doctorPatientsProvider = Provider<AsyncValue<List<Map<String, dynamic>>>>((ref) {
-  final appointmentsAsync = ref.watch(doctorAppointmentsProvider);
-  return appointmentsAsync.whenData((appointments) {
-    final uniquePatients = <String, Map<String, dynamic>>{};
-    for (var app in appointments) {
-      if (!uniquePatients.containsKey(app.patientId)) {
-        uniquePatients[app.patientId] = {
-          'id': app.patientId,
-          'name': app.patientName,
-          'lastVisit': app.date,
-        };
-      } else {
-         DateTime last = uniquePatients[app.patientId]!['lastVisit'];
-         if (app.date.isAfter(last)) {
+final doctorPatientsProvider = Provider<AsyncValue<List<Map<String, dynamic>>>>(
+  (ref) {
+    final appointmentsAsync = ref.watch(doctorAppointmentsProvider);
+    return appointmentsAsync.whenData((appointments) {
+      final uniquePatients = <String, Map<String, dynamic>>{};
+      for (var app in appointments) {
+        if (!uniquePatients.containsKey(app.patientId)) {
+          uniquePatients[app.patientId] = {
+            'id': app.patientId,
+            'name': app.patientName,
+            'lastVisit': app.date,
+          };
+        } else {
+          DateTime last = uniquePatients[app.patientId]!['lastVisit'];
+          if (app.date.isAfter(last)) {
             uniquePatients[app.patientId]!['lastVisit'] = app.date;
-         }
+          }
+        }
       }
-    }
-    return uniquePatients.values.toList();
-  });
-});
+      return uniquePatients.values.toList();
+    });
+  },
+);
 
-final patientNotesProvider = StreamProvider.family<List<ClinicalNote>, String>((ref, patientId) {
+final patientNotesProvider = StreamProvider.family<List<ClinicalNote>, String>((
+  ref,
+  patientId,
+) {
   return ref.read(firestoreServiceProvider).getPatientNotes(patientId);
 });
 

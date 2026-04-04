@@ -252,8 +252,9 @@ class _DoctorPatientsScreenState extends ConsumerState<DoctorPatientsScreen> {
                     itemCount: filtered.length + 1,
                     separatorBuilder: (_, _) => const SizedBox(height: 16),
                     itemBuilder: (context, i) {
-                      if (i == filtered.length)
+                      if (i == filtered.length) {
                         return const SizedBox(height: 80);
+                      }
                       final p = filtered[i];
                       return _patientCard(context, p);
                     },

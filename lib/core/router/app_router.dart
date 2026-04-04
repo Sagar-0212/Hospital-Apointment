@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
-import '../../models/app_user.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/patient/patient_shell.dart';
 import '../../screens/patient/patient_dashboard.dart';
@@ -16,7 +15,8 @@ import '../../screens/doctor/doctor_patients.dart';
 import '../../screens/doctor/clinical_notes_screen.dart';
 import '../../screens/doctor/add_prescription_screen.dart';
 import '../../screens/profile/profile_screen.dart';
-import '../../screens/admin/admin_panel.dart';
+import '../../screens/admin/admin_dashboard.dart';
+import '../../screens/admin/admin_manage_doctors.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -106,6 +106,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ProfileScreen(),
           ),
         ],
+      ),
+      // Admin Routes
+      GoRoute(
+        path: '/admin/dashboard',
+        builder: (context, state) => const AdminDashboard(),
+      ),
+      GoRoute(
+        path: '/admin/doctors',
+        builder: (context, state) => const AdminManageDoctors(),
       ),
     ],
   );

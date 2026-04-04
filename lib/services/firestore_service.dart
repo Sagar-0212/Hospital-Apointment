@@ -21,7 +21,10 @@ class FirestoreService {
   }
 
   // UPDATED: Now supports Map structure
-  Future<void> updateDoctorAvailability(String uid, Map<String, List<String>> hours) async {
+  Future<void> updateDoctorAvailability(
+    String uid,
+    Map<String, List<String>> hours,
+  ) async {
     await _db.collection('users').doc(uid).update({'clinicalHours': hours});
   }
 
@@ -30,13 +33,21 @@ class FirestoreService {
     await _db.collection('appointments').doc(app.id).set(app.toMap());
   }
 
-  Future<void> updateAppointmentStatus(String appId, String status, {String? reason}) async {
+  Future<void> updateAppointmentStatus(
+    String appId,
+    String status, {
+    String? reason,
+  }) async {
     final data = {'status': status};
     if (reason != null) data['cancellationReason'] = reason;
     await _db.collection('appointments').doc(appId).update(data);
   }
 
-  Future<void> rescheduleAppointment(String appId, DateTime date, String slot) async {
+  Future<void> rescheduleAppointment(
+    String appId,
+    DateTime date,
+    String slot,
+  ) async {
     await _db.collection('appointments').doc(appId).update({
       'date': Timestamp.fromDate(date),
       'timeSlot': slot,
@@ -55,7 +66,9 @@ class FirestoreService {
           debugPrint('Firestore Error (patientAppointments): $error');
         })
         .map((snap) {
-          final list = snap.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList();
+          final list = snap.docs
+              .map((d) => Appointment.fromMap(d.data(), d.id))
+              .toList();
           list.sort((a, b) => b.date.compareTo(a.date));
           return list;
         });
@@ -70,7 +83,9 @@ class FirestoreService {
           debugPrint('Firestore Error (doctorAppointments): $error');
         })
         .map((snap) {
-          final list = snap.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList();
+          final list = snap.docs
+              .map((d) => Appointment.fromMap(d.data(), d.id))
+              .toList();
           list.sort((a, b) => b.date.compareTo(a.date));
           return list;
         });
@@ -84,7 +99,10 @@ class FirestoreService {
         .handleError((error) {
           debugPrint('Firestore Error (availableDoctors): $error');
         })
-        .map((snap) => snap.docs.map((d) => AppUser.fromMap(d.data(), d.id)).toList());
+        .map(
+          (snap) =>
+              snap.docs.map((d) => AppUser.fromMap(d.data(), d.id)).toList(),
+        );
   }
 
   // MEDICAL RECORDS Methods
@@ -101,9 +119,11 @@ class FirestoreService {
           debugPrint('Firestore Error (patientRecords): $error');
         })
         .map((snap) {
-           final list = snap.docs.map((d) => MedicalRecord.fromMap(d.data(), d.id)).toList();
-           list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-           return list;
+          final list = snap.docs
+              .map((d) => MedicalRecord.fromMap(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
         });
   }
 
@@ -116,14 +136,19 @@ class FirestoreService {
           debugPrint('Firestore Error (patientPrescriptions): $error');
         })
         .map((snap) {
-           final list = snap.docs.map((d) => Prescription.fromMap(d.data(), d.id)).toList();
-           list.sort((a, b) => b.date.compareTo(a.date));
-           return list;
+          final list = snap.docs
+              .map((d) => Prescription.fromMap(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => b.date.compareTo(a.date));
+          return list;
         });
   }
 
   Future<void> createPrescription(Prescription prescription) async {
-    await _db.collection('prescriptions').doc(prescription.id).set(prescription.toMap());
+    await _db
+        .collection('prescriptions')
+        .doc(prescription.id)
+        .set(prescription.toMap());
   }
 
   Stream<List<ClinicalNote>> getPatientNotes(String patientId) {
@@ -135,9 +160,11 @@ class FirestoreService {
           debugPrint('Firestore Error (patientNotes): $error');
         })
         .map((snap) {
-           final list = snap.docs.map((d) => ClinicalNote.fromMap(d.data(), d.id)).toList();
-           list.sort((a, b) => b.date.compareTo(a.date));
-           return list;
+          final list = snap.docs
+              .map((d) => ClinicalNote.fromMap(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => b.date.compareTo(a.date));
+          return list;
         });
   }
 
@@ -156,9 +183,11 @@ class FirestoreService {
           debugPrint('Firestore Error (pendingDoctors): $error');
         })
         .map((snap) {
-           final list = snap.docs.map((d) => AppUser.fromMap(d.data(), d.id)).toList();
-           list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-           return list;
+          final list = snap.docs
+              .map((d) => AppUser.fromMap(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
         });
   }
 
@@ -172,9 +201,11 @@ class FirestoreService {
           debugPrint('Firestore Error (approvedDoctors): $error');
         })
         .map((snap) {
-           final list = snap.docs.map((d) => AppUser.fromMap(d.data(), d.id)).toList();
-           list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-           return list;
+          final list = snap.docs
+              .map((d) => AppUser.fromMap(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
         });
   }
 
@@ -187,9 +218,11 @@ class FirestoreService {
           debugPrint('Firestore Error (allDoctors): $error');
         })
         .map((snap) {
-           final list = snap.docs.map((d) => AppUser.fromMap(d.data(), d.id)).toList();
-           list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-           return list;
+          final list = snap.docs
+              .map((d) => AppUser.fromMap(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
         });
   }
 
@@ -200,10 +233,20 @@ class FirestoreService {
     });
   }
 
-  Future<void> rejectDoctor(String doctorId) async {
+  // ADMIN: Approve Doctor
+  Future<void> approveDoctored(String doctorId) async {
+    await _db.collection('users').doc(doctorId).update({
+      'isApproved': true,
+      'approvedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  // ADMIN: Reject (Delete) Doctor
+  Future<void> rejectDoctored(String doctorId) async {
     await _db.collection('users').doc(doctorId).delete();
   }
 
+  // ADMIN: Block Doctor
   Future<void> blockDoctor(String doctorId) async {
     await _db.collection('users').doc(doctorId).update({
       'isApproved': false,
@@ -219,10 +262,11 @@ class FirestoreService {
           debugPrint('Firestore Error (allUsers): $error');
         })
         .map((snap) {
-           final list = snap.docs.map((d) => AppUser.fromMap(d.data(), d.id)).toList();
-           list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-           return list;
+          final list = snap.docs
+              .map((d) => AppUser.fromMap(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
         });
   }
 }
-

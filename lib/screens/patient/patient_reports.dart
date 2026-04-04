@@ -96,11 +96,12 @@ class _PatientReportsScreenState extends ConsumerState<PatientReportsScreen>
   ) {
     return prescriptionsAsync.when(
       data: (prescriptions) {
-        if (prescriptions.isEmpty)
+        if (prescriptions.isEmpty) {
           return _buildEmptyState(
             'No active prescriptions',
             Icons.medication_outlined,
           );
+        }
 
         return ListView.builder(
           padding: const EdgeInsets.all(24),
