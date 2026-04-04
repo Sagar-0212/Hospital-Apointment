@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
+import '../services/admin_actions_service.dart';
 import '../models/appointment.dart';
 import '../models/app_user.dart';
 import '../models/medical_record.dart';
@@ -13,6 +14,10 @@ export '../services/auth_service.dart'
 
 final firestoreServiceProvider = Provider<FirestoreService>(
   (ref) => FirestoreService(),
+);
+
+final adminActionsServiceProvider = Provider<AdminActionsService>(
+  (ref) => AdminActionsService(),
 );
 
 // Patient Providers

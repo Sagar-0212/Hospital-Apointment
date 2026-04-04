@@ -306,25 +306,81 @@ class _AdminManageDoctorsState extends ConsumerState<AdminManageDoctors> {
                   ),
                 ),
               ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showBlockDialog(doctor, ref),
+                    icon: const Icon(Icons.block),
+                    label: Text(
+                      'Block',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.warning.withOpacity(0.1),
+                      foregroundColor: AppColors.warning,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(color: AppColors.warning),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
         ],
       ),
     );
   }
 
-  void _approveDoctored(AppUser doctor, WidgetRef ref) {
-    FirestoreService().approveDoctored(doctor.id);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${doctor.name} approved successfully!',
-          style: GoogleFonts.inter(),
-        ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    setState(() {});
+  void _approveDoctored(AppUser doctor, WidgetRef ref) async {
+    try {
+      await FirestoreService().approveDoctored(doctor.id);
+
+      // Log the action
+      final currentUser = ref.read(currentUserProvider).value;
+      if (currentUser != null) {
+        await ref
+            .read(adminActionsServiceProvider)
+            .logAdminAction(
+              adminId: currentUser.id,
+              adminName: currentUser.name,
+              action: 'approved',
+              targetType: 'doctor',
+              targetId: doctor.id,
+              targetName: doctor.name,
+            );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '✓ ${doctor.name} approved successfully!',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error approving doctor: $e',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   void _showRejectDialog(AppUser doctor, WidgetRef ref) {
@@ -332,12 +388,59 @@ class _AdminManageDoctorsState extends ConsumerState<AdminManageDoctors> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'Reject Doctor?',
+          'Reject Doctor Registration?',
           style: GoogleFonts.inter(fontWeight: FontWeight.w700),
         ),
-        content: Text(
-          'Are you sure you want to reject ${doctor.name}? This action cannot be undone.',
-          style: GoogleFonts.inter(fontSize: 14),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You are about to reject the registration of:',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    doctor.name,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    doctor.email,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Note: This action will permanently delete their registration. This cannot be undone.',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppColors.warning,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -351,21 +454,7 @@ class _AdminManageDoctorsState extends ConsumerState<AdminManageDoctors> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              FirestoreService().rejectDoctored(doctor.id);
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    '${doctor.name} rejected',
-                    style: GoogleFonts.inter(),
-                  ),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-              setState(() {});
-            },
+            onPressed: () => _rejectDoctor(doctor, ref),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: Text(
               'Reject',
@@ -378,5 +467,191 @@ class _AdminManageDoctorsState extends ConsumerState<AdminManageDoctors> {
         ],
       ),
     );
+  }
+
+  void _rejectDoctor(AppUser doctor, WidgetRef ref) async {
+    try {
+      Navigator.pop(context);
+
+      await FirestoreService().rejectDoctored(doctor.id);
+
+      // Log the action
+      final currentUser = ref.read(currentUserProvider).value;
+      if (currentUser != null) {
+        await ref
+            .read(adminActionsServiceProvider)
+            .logAdminAction(
+              adminId: currentUser.id,
+              adminName: currentUser.name,
+              action: 'rejected',
+              targetType: 'doctor',
+              targetId: doctor.id,
+              targetName: doctor.name,
+            );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '✗ ${doctor.name} registration rejected',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error rejecting doctor: $e',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showBlockDialog(AppUser doctor, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Block Doctor?',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You are about to block:',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    doctor.name,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    doctor.email,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Blocked doctors cannot access the system. You can unblock them later.',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppColors.warning,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => _blockDoctor(doctor, ref),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
+            child: Text(
+              'Block',
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _blockDoctor(AppUser doctor, WidgetRef ref) async {
+    try {
+      Navigator.pop(context);
+
+      await FirestoreService().blockDoctor(doctor.id);
+
+      // Log the action
+      final currentUser = ref.read(currentUserProvider).value;
+      if (currentUser != null) {
+        await ref
+            .read(adminActionsServiceProvider)
+            .logAdminAction(
+              adminId: currentUser.id,
+              adminName: currentUser.name,
+              action: 'blocked',
+              targetType: 'doctor',
+              targetId: doctor.id,
+              targetName: doctor.name,
+            );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '⊘ ${doctor.name} has been blocked',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: AppColors.warning,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error blocking doctor: $e',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

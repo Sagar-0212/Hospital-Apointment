@@ -15,6 +15,7 @@ import '../../screens/doctor/doctor_patients.dart';
 import '../../screens/doctor/clinical_notes_screen.dart';
 import '../../screens/doctor/add_prescription_screen.dart';
 import '../../screens/profile/profile_screen.dart';
+import '../../screens/admin/admin_shell.dart';
 import '../../screens/admin/admin_dashboard.dart';
 import '../../screens/admin/admin_manage_doctors.dart';
 
@@ -107,14 +108,31 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Admin Routes
-      GoRoute(
-        path: '/admin/dashboard',
-        builder: (context, state) => const AdminDashboard(),
-      ),
-      GoRoute(
-        path: '/admin/doctors',
-        builder: (context, state) => const AdminManageDoctors(),
+      // Admin Shell
+      ShellRoute(
+        builder: (context, state, child) => AdminShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/admin/dashboard',
+            builder: (context, state) => const AdminDashboard(),
+          ),
+          GoRoute(
+            path: '/admin/doctors',
+            builder: (context, state) => const AdminManageDoctors(),
+          ),
+          GoRoute(
+            path: '/admin/users',
+            builder: (context, state) => const Placeholder(), // To be created
+          ),
+          GoRoute(
+            path: '/admin/logs',
+            builder: (context, state) => const Placeholder(), // To be created
+          ),
+          GoRoute(
+            path: '/admin/settings',
+            builder: (context, state) => const Placeholder(), // To be created
+          ),
+        ],
       ),
     ],
   );
@@ -136,8 +154,15 @@ class LoginRedirectWrapper extends ConsumerWidget {
           data: (appUser) {
             if (appUser == null) return const LoginScreen();
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (appUser.role == 'doctor') {
-                context.go('/doctor/home');
+              if (appUser.role == 'admin') {
+                context.go('/admin/dashboard');
+              } else if (appUser.role == 'doctor') {
+                // Only redirect unapproved doctors to profile for approval wait
+                if (!appUser.isApproved) {
+                  context.go('/doctor/profile');
+                } else {
+                  context.go('/doctor/home');
+                }
               } else {
                 context.go('/patient/home');
               }
