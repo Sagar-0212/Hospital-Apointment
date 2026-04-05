@@ -25,6 +25,22 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/login',
     redirect: (context, state) {
+      // Development mode: Auto-redirect to appropriate dashboard
+      if (DEVELOPMENT_MODE) {
+        final isOnLogin = state.uri.toString() == '/login';
+        if (isOnLogin) {
+          // Redirect based on dev role
+          if (DEV_USER_ROLE == 'doctor') {
+            return '/doctor/home';
+          } else if (DEV_USER_ROLE == 'admin') {
+            return '/admin/home';
+          } else {
+            return '/patient/home';
+          }
+        }
+        return null;
+      }
+
       // While loading, stay put
       if (authState.isLoading) return null;
 

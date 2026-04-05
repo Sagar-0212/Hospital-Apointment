@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/theme/colors.dart';
 import '../../providers/app_providers.dart';
 import '../../services/auth_service.dart';
@@ -91,7 +92,10 @@ class AdminDashboard extends ConsumerWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.7)],
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.7),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -171,7 +175,9 @@ class AdminDashboard extends ConsumerWidget {
                     child: SizedBox(
                       width: 40,
                       height: 40,
-                      child: CircularProgressIndicator(color: AppColors.primary),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
                     ),
                   );
                 }
@@ -297,7 +303,9 @@ class AdminDashboard extends ConsumerWidget {
                     child: SizedBox(
                       width: 40,
                       height: 40,
-                      child: CircularProgressIndicator(color: AppColors.primary),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
                     ),
                   );
                 }
@@ -324,9 +332,7 @@ class AdminDashboard extends ConsumerWidget {
 
                 final logs = snapshot.data!;
                 return Column(
-                  children: [
-                    ...logs.map((log) => _buildActivityItem(log)).toList(),
-                  ],
+                  children: [...logs.map((log) => _buildActivityItem(log))],
                 );
               },
             ),
@@ -473,11 +479,7 @@ class AdminDashboard extends ConsumerWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: AppColors.textHint,
-            ),
+            Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textHint),
           ],
         ),
       ),
@@ -488,7 +490,8 @@ class AdminDashboard extends ConsumerWidget {
     final action = log['action'] as String? ?? 'Unknown';
     final targetName = log['targetName'] as String? ?? 'Unknown';
     final adminName = log['adminName'] as String? ?? 'System';
-    final timestamp = (log['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+    final timestamp =
+        (log['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -599,7 +602,7 @@ class AdminDashboard extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              ref.read(authServiceProvider).logout();
+              ref.read(authServiceProvider).signOut();
               context.go('/login');
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -609,19 +612,6 @@ class AdminDashboard extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-              context,
-              icon: Icons.settings,
-              title: 'System Settings',
-              subtitle: 'Configure application settings',
-              color: Colors.orange,
-              onTap: () => _showComingSoon(context),
-            ),
-          ],
-        ),
       ),
     );
   }

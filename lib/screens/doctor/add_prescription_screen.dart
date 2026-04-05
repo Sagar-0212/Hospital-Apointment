@@ -6,7 +6,6 @@ import 'package:uuid/uuid.dart';
 import '../../core/theme/colors.dart';
 import '../../providers/app_providers.dart';
 import '../../models/prescription.dart';
-import '../../services/auth_service.dart';
 
 class AddPrescriptionScreen extends ConsumerStatefulWidget {
   final String patientId;

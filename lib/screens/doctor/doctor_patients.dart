@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../providers/app_providers.dart';
-import '../../services/auth_service.dart';
 import '../../core/theme/colors.dart';
 
 class DoctorPatientsScreen extends ConsumerStatefulWidget {

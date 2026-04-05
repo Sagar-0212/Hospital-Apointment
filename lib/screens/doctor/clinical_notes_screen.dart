@@ -8,7 +8,6 @@ import '../../core/theme/colors.dart';
 import '../../providers/app_providers.dart';
 import '../../models/clinical_note.dart';
 import '../../models/medical_record.dart';
-import '../../services/auth_service.dart';
 
 class ClinicalNotesScreen extends ConsumerStatefulWidget {
   final String patientId;

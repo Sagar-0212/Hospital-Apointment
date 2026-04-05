@@ -70,9 +70,7 @@ class AdminActionsService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snap) {
-          return snap.docs
-              .map((doc) => doc.data() as Map<String, dynamic>)
-              .toList();
+          return snap.docs.map((doc) => doc.data()).toList();
         });
   }
 

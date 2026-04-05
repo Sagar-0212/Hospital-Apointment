@@ -1,9 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_user.dart';
 import '../models/appointment.dart';
 import 'firestore_service.dart';
+
+// DEVELOPMENT MODE - Set to true to bypass firebase auth
+const bool DEVELOPMENT_MODE = true;
+const String DEV_USER_ROLE = 'doctor'; // 'patient', 'doctor', or 'admin'
+const String DEV_USER_EMAIL = 'doctor@demo.com';
+const String DEV_USER_NAME = 'Dr. Demo User';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -12,6 +19,19 @@ final authStateProvider = StreamProvider<User?>((ref) {
 final currentUserProvider = FutureProvider<AppUser?>((ref) async {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return null;
+
+  // In development mode, return mock user data
+  if (DEVELOPMENT_MODE) {
+    return AppUser(
+      id: 'dev-mock-user-123',
+      name: DEV_USER_NAME,
+      email: DEV_USER_EMAIL,
+      role: DEV_USER_ROLE,
+      createdAt: DateTime.now(),
+      isApproved: true,
+    );
+  }
+
   final firestoreService = FirestoreService();
   return firestoreService.getUser(user.uid);
 });
@@ -22,16 +42,32 @@ class AuthService {
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   User? get currentUser => _auth.currentUser;
 
-  Future<UserCredential?> signIn(String email, String password, String expectedRole) async {
+  Future<UserCredential?> signIn(
+    String email,
+    String password,
+    String expectedRole,
+  ) async {
     try {
+      // DEVELOPMENT MODE: Bypass Firebase auth
+      if (DEVELOPMENT_MODE) {
+        debugPrint('🔧 DEVELOPMENT MODE: Login bypassed for $DEV_USER_ROLE');
+        debugPrint('   Email: $DEV_USER_EMAIL');
+        debugPrint('   Role: $DEV_USER_ROLE');
+        // Return null - development mode doesn't use real Firebase creds
+        return null;
+      }
+
       // 1. firebase auth sign in
-      final cred = await _auth.signInWithEmailAndPassword(email: email, password: password);
-      
+      final cred = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
       // 2. verify role in firestore
       if (cred.user != null) {
         final fs = FirestoreService();
         final userDoc = await fs.getUser(cred.user!.uid);
-        
+
         if (userDoc == null) {
           await _auth.signOut();
           throw Exception('User profile not found in database.');
@@ -39,7 +75,9 @@ class AuthService {
 
         if (userDoc.role != expectedRole) {
           await _auth.signOut();
-          throw Exception('This email is registered as a ${userDoc.role.toUpperCase()}. Please use the correct tab to login.');
+          throw Exception(
+            'This email is registered as a ${userDoc.role.toUpperCase()}. Please use the correct tab to login.',
+          );
         }
       }
       return cred;
@@ -48,20 +86,68 @@ class AuthService {
     }
   }
 
-  Future<UserCredential?> register(String email, String password, String name, String role) async {
+  Future<UserCredential?> register(
+    String email,
+    String password,
+    String name,
+    String role,
+  ) async {
     try {
-      UserCredential userCred = await _auth.createUserWithEmailAndPassword(email: email, password: password);
-      
+      UserCredential userCred = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
       if (userCred.user != null) {
         // Initialize default clinical hours for doctors
         Map<String, List<String>>? initialHours;
         if (role == 'doctor') {
           initialHours = {
-            'Monday': ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'],
-            'Tuesday': ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'],
-            'Wednesday': ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'],
-            'Thursday': ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'],
-            'Friday': ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'],
+            'Monday': [
+              '09:00 AM',
+              '10:00 AM',
+              '11:00 AM',
+              '01:00 PM',
+              '02:00 PM',
+              '03:00 PM',
+              '04:00 PM',
+            ],
+            'Tuesday': [
+              '09:00 AM',
+              '10:00 AM',
+              '11:00 AM',
+              '01:00 PM',
+              '02:00 PM',
+              '03:00 PM',
+              '04:00 PM',
+            ],
+            'Wednesday': [
+              '09:00 AM',
+              '10:00 AM',
+              '11:00 AM',
+              '01:00 PM',
+              '02:00 PM',
+              '03:00 PM',
+              '04:00 PM',
+            ],
+            'Thursday': [
+              '09:00 AM',
+              '10:00 AM',
+              '11:00 AM',
+              '01:00 PM',
+              '02:00 PM',
+              '03:00 PM',
+              '04:00 PM',
+            ],
+            'Friday': [
+              '09:00 AM',
+              '10:00 AM',
+              '11:00 AM',
+              '01:00 PM',
+              '02:00 PM',
+              '03:00 PM',
+              '04:00 PM',
+            ],
             'Saturday': ['10:00 AM', '11:00 AM', '12:00 PM'],
             'Sunday': [], // Closed by default
           };
@@ -74,27 +160,43 @@ class AuthService {
           role: role,
           createdAt: DateTime.now(),
           clinicalHours: initialHours,
-          isApproved: role != 'doctor', // Doctors need admin approval, patients are auto-approved
+          isApproved:
+              role !=
+              'doctor', // Doctors need admin approval, patients are auto-approved
         );
-        
+
         final fs = FirestoreService();
         await fs.createUser(newUser);
-        
+
         // Populate Dummy Demo Data
         if (role == 'doctor') {
-           await fs.createAppointment(Appointment(
-               id: 'demo_app_1', patientId: 'patient123', doctorId: newUser.id,
-               patientName: 'Marcus Thorne', doctorName: newUser.name,
-               date: DateTime.now().add(const Duration(hours: 2)), 
-               timeSlot: '09:00 AM', status: 'upcoming', type: 'Consultation'
-           ));
+          await fs.createAppointment(
+            Appointment(
+              id: 'demo_app_1',
+              patientId: 'patient123',
+              doctorId: newUser.id,
+              patientName: 'Marcus Thorne',
+              doctorName: newUser.name,
+              date: DateTime.now().add(const Duration(hours: 2)),
+              timeSlot: '09:00 AM',
+              status: 'upcoming',
+              type: 'Consultation',
+            ),
+          );
         } else {
-           await fs.createAppointment(Appointment(
-               id: 'demo_app_3', patientId: newUser.id, doctorId: 'doc123',
-               patientName: newUser.name, doctorName: 'Dr. Elena Rossi',
-               date: DateTime.now().add(const Duration(days: 1)), 
-               timeSlot: '10:00 AM', status: 'upcoming', type: 'Checkup'
-           ));
+          await fs.createAppointment(
+            Appointment(
+              id: 'demo_app_3',
+              patientId: newUser.id,
+              doctorId: 'doc123',
+              patientName: newUser.name,
+              doctorName: 'Dr. Elena Rossi',
+              date: DateTime.now().add(const Duration(days: 1)),
+              timeSlot: '10:00 AM',
+              status: 'upcoming',
+              type: 'Checkup',
+            ),
+          );
         }
       }
       return userCred;

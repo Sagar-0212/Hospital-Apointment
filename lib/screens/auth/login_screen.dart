@@ -4,13 +4,19 @@ import '../../services/auth_service.dart';
 import '../../core/theme/colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// Import dev constants
+import '../../services/auth_service.dart'
+    as auth
+    show DEVELOPMENT_MODE, DEV_USER_EMAIL, DEV_USER_ROLE;
+
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends ConsumerState<LoginScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool isPatient = true;
   bool _obscurePassword = true;
@@ -26,6 +32,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    // DEVELOPMENT MODE: Pre-fill demo credentials
+    if (auth.DEVELOPMENT_MODE) {
+      _loginEmailCtrl.text = auth.DEV_USER_EMAIL;
+      _loginPassCtrl.text = 'demo';
+      isPatient = auth.DEV_USER_ROLE != 'doctor';
+      _tabController.index = isPatient ? 0 : 1;
+
+      // Auto-login after brief delay
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          _handleSignIn();
+        }
+      });
+    }
   }
 
   @override
@@ -42,11 +63,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     setState(() => _isLoading = true);
     try {
       final role = isPatient ? 'patient' : 'doctor';
-      await ref.read(authServiceProvider).signIn(
-        _loginEmailCtrl.text.trim(),
-        _loginPassCtrl.text.trim(),
-        role,
-      );
+      await ref
+          .read(authServiceProvider)
+          .signIn(
+            _loginEmailCtrl.text.trim(),
+            _loginPassCtrl.text.trim(),
+            role,
+          );
     } catch (e) {
       _showError(e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -55,7 +78,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   }
 
   Future<void> _handleRegister() async {
-    if (_regNameCtrl.text.isEmpty || _regEmailCtrl.text.isEmpty || _regPassCtrl.text.isEmpty) {
+    if (_regNameCtrl.text.isEmpty ||
+        _regEmailCtrl.text.isEmpty ||
+        _regPassCtrl.text.isEmpty) {
       _showError('Please fill all fields');
       return;
     }
@@ -66,12 +91,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     setState(() => _isLoading = true);
     try {
       final role = isPatient ? 'patient' : 'doctor';
-      await ref.read(authServiceProvider).register(
-        _regEmailCtrl.text.trim(),
-        _regPassCtrl.text.trim(),
-        _regNameCtrl.text.trim(),
-        role,
-      );
+      await ref
+          .read(authServiceProvider)
+          .register(
+            _regEmailCtrl.text.trim(),
+            _regPassCtrl.text.trim(),
+            _regNameCtrl.text.trim(),
+            role,
+          );
     } catch (e) {
       _showError(e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -98,8 +125,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
         children: [
           // Background Gradient Decor
           Positioned(
-            top: -100, right: -100,
-            child: CircleAvatar(radius: 200, backgroundColor: AppColors.primaryLight.withOpacity(0.3)),
+            top: -100,
+            right: -100,
+            child: CircleAvatar(
+              radius: 200,
+              backgroundColor: AppColors.primaryLight.withOpacity(0.3),
+            ),
           ),
           SafeArea(
             child: SingleChildScrollView(
@@ -143,22 +174,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     return Column(
       children: [
         Container(
-          width: 64, height: 64,
+          width: 64,
+          height: 64,
           decoration: BoxDecoration(
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(18),
-            boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 32),
+          child: const Icon(
+            Icons.favorite_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
         ),
         const SizedBox(height: 16),
         Text(
           'CareConnect',
-          style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w900, color: AppColors.primaryDark, letterSpacing: -0.5),
+          style: GoogleFonts.inter(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            color: AppColors.primaryDark,
+            letterSpacing: -0.5,
+          ),
         ),
         Text(
           'Your health, our priority.',
-          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -167,7 +218,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   Widget _buildRoleToggle() {
     return Container(
       padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(color: AppColors.cardGray, borderRadius: BorderRadius.circular(35)),
+      decoration: BoxDecoration(
+        color: AppColors.cardGray,
+        borderRadius: BorderRadius.circular(35),
+      ),
       child: Row(
         children: [
           _buildRoleTab('Patient', true, Icons.person_rounded),
@@ -178,7 +232,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   }
 
   Widget _buildRoleTab(String label, bool isPatientRole, IconData icon) {
-    final isSelected = (isPatientRole && isPatient) || (!isPatientRole && !isPatient);
+    final isSelected =
+        (isPatientRole && isPatient) || (!isPatientRole && !isPatient);
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => isPatient = isPatientRole),
@@ -188,18 +243,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(30),
-            boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))] : [],
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 20, color: isSelected ? AppColors.primary : AppColors.textHint),
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? AppColors.primary : AppColors.textHint,
+              ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: GoogleFonts.inter(
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  color: isSelected ? AppColors.textPrimary : AppColors.textHint,
+                  color: isSelected
+                      ? AppColors.textPrimary
+                      : AppColors.textHint,
                 ),
               ),
             ],
@@ -211,16 +280,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
 
   Widget _buildAuthTabs() {
     return Container(
-      decoration: BoxDecoration(color: AppColors.cardGray, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: AppColors.cardGray,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: TabBar(
         controller: _tabController,
         onTap: (index) => setState(() {}),
-        indicator: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
+        indicator: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(12),
+        ),
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: Colors.white,
         unselectedLabelColor: AppColors.textSecondary,
-        labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
-        tabs: const [Tab(text: 'Existing User'), Tab(text: 'New User')],
+        labelStyle: GoogleFonts.inter(
+          fontWeight: FontWeight.w700,
+          fontSize: 14,
+        ),
+        tabs: const [
+          Tab(text: 'Existing User'),
+          Tab(text: 'New User'),
+        ],
       ),
     );
   }
@@ -228,9 +309,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   Widget _buildSignInForm() {
     return Column(
       children: [
-        _buildInputField(_loginEmailCtrl, 'Email Address', Icons.email_outlined, false),
+        _buildInputField(
+          _loginEmailCtrl,
+          'Email Address',
+          Icons.email_outlined,
+          false,
+        ),
         const SizedBox(height: 20),
-        _buildInputField(_loginPassCtrl, 'Password', Icons.lock_outline_rounded, true),
+        _buildInputField(
+          _loginPassCtrl,
+          'Password',
+          Icons.lock_outline_rounded,
+          true,
+        ),
         const SizedBox(height: 32),
         _buildActionButton('Sign In to Account', _handleSignIn),
       ],
@@ -240,30 +331,64 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   Widget _buildRegisterForm() {
     return Column(
       children: [
-        _buildInputField(_regNameCtrl, 'Full Name', Icons.person_outline_rounded, false),
+        _buildInputField(
+          _regNameCtrl,
+          'Full Name',
+          Icons.person_outline_rounded,
+          false,
+        ),
         const SizedBox(height: 16),
-        _buildInputField(_regEmailCtrl, 'Email Address', Icons.email_outlined, false),
+        _buildInputField(
+          _regEmailCtrl,
+          'Email Address',
+          Icons.email_outlined,
+          false,
+        ),
         const SizedBox(height: 16),
-        _buildInputField(_regPassCtrl, 'Password', Icons.lock_outline_rounded, true),
+        _buildInputField(
+          _regPassCtrl,
+          'Password',
+          Icons.lock_outline_rounded,
+          true,
+        ),
         const SizedBox(height: 24),
-        _buildActionButton('Create ${isPatient ? "Patient" : "Doctor"} Profile', _handleRegister),
+        _buildActionButton(
+          'Create ${isPatient ? "Patient" : "Doctor"} Profile',
+          _handleRegister,
+        ),
       ],
     );
   }
 
-  Widget _buildInputField(TextEditingController controller, String hint, IconData icon, bool isPassword) {
+  Widget _buildInputField(
+    TextEditingController controller,
+    String hint,
+    IconData icon,
+    bool isPassword,
+  ) {
     return TextField(
       controller: controller,
       obscureText: isPassword && _obscurePassword,
       style: GoogleFonts.inter(fontWeight: FontWeight.w600),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontWeight: FontWeight.normal),
+        hintStyle: GoogleFonts.inter(
+          color: AppColors.textHint,
+          fontWeight: FontWeight.normal,
+        ),
         prefixIcon: Icon(icon, color: AppColors.primary, size: 22),
-        suffixIcon: isPassword ? IconButton(
-          icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
-          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-        ) : null,
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  size: 20,
+                ),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              )
+            : null,
       ),
     );
   }
@@ -276,12 +401,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
         onPressed: _isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryDark,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           elevation: 0,
         ),
         child: _isLoading
-            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
-            : Text(label, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: Colors.white,
+                ),
+              )
+            : Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
       ),
     );
   }
@@ -294,7 +435,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             ? 'Manage your health easily. Access appointments, prescriptions, and safe medical records in one place.'
             : 'Deliver better care. Manage patients, clinical notes, and send prescriptions directly through the portal.',
         textAlign: TextAlign.center,
-        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint, height: 1.4),
+        style: GoogleFonts.inter(
+          fontSize: 13,
+          color: AppColors.textHint,
+          height: 1.4,
+        ),
       ),
     );
   }
